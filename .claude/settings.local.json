@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(cmd /c \"dir C:\\\\Users\\\\brian\\\\OneDrive\\\\Downloads\\\\flutter\" 2>&1)",
+      "Bash(node \"C:/Users/brian/.claude/plugins/cache/openai-codex/codex/1.0.4/scripts/codex-companion.mjs\" --help)"
+    ]
+  }
+}

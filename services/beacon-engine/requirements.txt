@@ -1,0 +1,26 @@
+fastapi==0.111.0
+uvicorn[standard]==0.29.0
+pydantic==2.7.1
+pydantic-settings==2.2.1
+
+# DBSCAN clustering
+scikit-learn==1.4.2
+numpy==1.26.4
+
+# Kalman filter
+filterpy==1.4.5
+
+# Database
+psycopg2-binary==2.9.9
+asyncpg==0.29.0
+
+# Redis
+redis==5.0.4
+
+# Kafka consumer
+kafka-python==2.0.2
+
+# Async
+anyio==4.3.0
+
+python-dotenv==1.0.1
