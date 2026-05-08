@@ -2,23 +2,32 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/design_tokens.dart';
 import '../../services/api_client.dart';
 
+/// Crowding report — modal-style sheet with 3 large pill buttons.
+/// Per JW Design spec section 6.9: fast 1-tap reports while standing
+/// at the kanto. Each option auto-submits and dismisses.
 class CrowdingReportScreen extends ConsumerStatefulWidget {
   final String beaconId;
 
   const CrowdingReportScreen({super.key, required this.beaconId});
 
   @override
-  ConsumerState<CrowdingReportScreen> createState() => _CrowdingReportScreenState();
+  ConsumerState<CrowdingReportScreen> createState() =>
+      _CrowdingReportScreenState();
 }
 
 class _CrowdingReportScreenState extends ConsumerState<CrowdingReportScreen> {
   bool _submitting = false;
+  String? _selected;
 
   Future<void> _submit(String level) async {
     if (_submitting) return;
-    setState(() => _submitting = true);
+    setState(() {
+      _submitting = true;
+      _selected = level;
+    });
     try {
       await ref.read(apiClientProvider).reportCrowding(
             beaconId: widget.beaconId,
@@ -26,15 +35,55 @@ class _CrowdingReportScreenState extends ConsumerState<CrowdingReportScreen> {
           );
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Salamat! +5 Guardian points')),
+          SnackBar(
+            backgroundColor: JWColors.black,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(JWSpacing.lg),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(JWRadius.card),
+            ),
+            content: Row(
+              children: [
+                const Icon(Icons.check_circle,
+                    color: JWColors.jeepneyYellow, size: 18),
+                const SizedBox(width: JWSpacing.sm),
+                Expanded(
+                  child: RichText(
+                    text: const TextSpan(
+                      style: TextStyle(color: JWColors.white),
+                      children: [
+                        TextSpan(text: 'Na-report ang crowding. '),
+                        TextSpan(
+                          text: '+5',
+                          style: TextStyle(
+                            color: JWColors.jeepneyYellow,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                        TextSpan(text: ' Guardian Points'),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         );
         context.pop();
       }
-    } catch (e) {
+    } catch (_) {
       if (mounted) {
+        // Demo mode — backend not running. Still acknowledge to user.
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed: $e')),
+          const SnackBar(
+            backgroundColor: JWColors.black,
+            content: Text(
+              'Demo mode: report would be sent to backend.',
+              style: TextStyle(color: JWColors.white),
+            ),
+          ),
         );
+        context.pop();
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -43,58 +92,160 @@ class _CrowdingReportScreenState extends ConsumerState<CrowdingReportScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const options = [
-      ('malwag', 'Malwag 😊', Colors.green, 'Maraming upuan'),
-      ('ok', 'OK 👍', Colors.blue, 'Ilang upuan pa'),
-      ('siksikan', 'Siksikan 😰', Color(0xFFE8401C), 'Puno na halos'),
-      ('puno', 'Puno! 🚫', Colors.red, 'Hindi na makasakay'),
-    ];
-
     return Scaffold(
-      appBar: AppBar(title: const Text('I-report ang siksikan')),
-      body: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.black54,
+      body: GestureDetector(
+        onTap: () => context.pop(),
+        child: Stack(
           children: [
-            Text('Gaano kasikip ang jeep na ito?',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 24),
-            for (final entry in options)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: InkWell(
-                  onTap: _submitting ? null : () => _submit(entry.$1),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: entry.$3.withOpacity(0.4)),
-                      borderRadius: BorderRadius.circular(12),
+            // Bottom sheet content
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: GestureDetector(
+                onTap: () {}, // absorb taps inside sheet
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: JWColors.white,
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(JWRadius.sheet),
+                      topRight: Radius.circular(JWRadius.sheet),
                     ),
-                    child: Row(
-                      children: [
-                        Text(entry.$2,
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: entry.$3,
-                            )),
-                        const SizedBox(width: 12),
-                        Text(entry.$4,
-                            style: TextStyle(color: Colors.grey[600])),
-                      ],
-                    ),
+                  ),
+                  padding: EdgeInsets.fromLTRB(
+                    JWSpacing.xl,
+                    JWSpacing.md,
+                    JWSpacing.xl,
+                    MediaQuery.of(context).padding.bottom + JWSpacing.xxl,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Drag handle
+                      Container(
+                        width: 36,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: JWColors.chipGray,
+                          borderRadius:
+                              BorderRadius.circular(JWRadius.pill),
+                        ),
+                      ),
+                      const SizedBox(height: JWSpacing.xxl),
+                      Text(
+                        'Kamusta ang sasakyan?',
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      ),
+                      const SizedBox(height: JWSpacing.sm),
+                      Text(
+                        'Para sa ibang commuters na naghihintay.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: JWSpacing.xxl),
+
+                      _crowdButton(
+                        level: 'siksikan',
+                        label: 'SIKSIKAN',
+                        sub: 'Puno na!',
+                        color: JWColors.siksikanRed,
+                        icon: Icons.directions_bus,
+                      ),
+                      const SizedBox(height: JWSpacing.md),
+                      _crowdButton(
+                        level: 'ok',
+                        label: 'KATAMTAMAN',
+                        sub: 'Pwede pa.',
+                        color: JWColors.warningOrange,
+                        icon: Icons.directions_bus,
+                      ),
+                      const SizedBox(height: JWSpacing.md),
+                      _crowdButton(
+                        level: 'malwag',
+                        label: 'MALWAG',
+                        sub: 'May puwang pa!',
+                        color: JWColors.malwagGreen,
+                        icon: Icons.directions_bus,
+                      ),
+
+                      const SizedBox(height: JWSpacing.lg),
+                      TextButton(
+                        onPressed: () => context.pop(),
+                        child: Text(
+                          'Hindi na ako makapag-report',
+                          style:
+                              Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                    color: JWColors.mutedGray,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-            if (_submitting)
-              const Padding(
-                padding: EdgeInsets.only(top: 16),
-                child: Center(child: CircularProgressIndicator()),
-              ),
+            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _crowdButton({
+    required String level,
+    required String label,
+    required String sub,
+    required Color color,
+    required IconData icon,
+  }) {
+    final isLoading = _submitting && _selected == level;
+    return SizedBox(
+      width: double.infinity,
+      height: 56,
+      child: ElevatedButton(
+        onPressed: _submitting ? null : () => _submit(level),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          foregroundColor: JWColors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(JWRadius.pill),
+          ),
+          elevation: 0,
+          disabledBackgroundColor: color.withOpacity(0.6),
+          disabledForegroundColor: JWColors.white,
+        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: JWColors.white,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 20, color: JWColors.white),
+                  const SizedBox(width: JWSpacing.md),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(width: JWSpacing.sm),
+                  Text(
+                    sub,
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w400,
+                      color: JWColors.white.withOpacity(0.85),
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }

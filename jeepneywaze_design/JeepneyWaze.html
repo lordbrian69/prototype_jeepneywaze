@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>JeepneyWaze — Design Canvas</title>
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; background: #f0eee9; }
+  body { font-family: 'Inter', system-ui, sans-serif; }
+</style>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="tokens.jsx"></script>
+<script type="text/babel" src="phone-frame.jsx"></script>
+<script type="text/babel" src="map.jsx"></script>
+<script type="text/babel" src="screens-onboarding.jsx"></script>
+<script type="text/babel" src="screens-otp.jsx"></script>
+<script type="text/babel" src="screens-map.jsx"></script>
+<script type="text/babel" src="screens-sheets.jsx"></script>
+<script type="text/babel" src="screens-extras.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "darkMap": false,
+  "density": "normal",
+  "crowdState": "mixed"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  const [selected, setSelected] = React.useState(null);
+  const [activeSheet, setActiveSheet] = React.useState(null);
+
+  const handleBeacon = (b) => {
+    setSelected(b.id);
+    setActiveSheet('route');
+  };
+
+  // Map screen with overlay sheet for interactivity
+  const MapWithSheet = ({ variant }) => (
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <HomeMapBase variant={variant} tweaks={tweaks}
+                   onBeaconClick={handleBeacon} selectedId={selected}/>
+      {activeSheet === 'route' && (
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          height: '72%', zIndex: 30,
+          animation: 'slideUp 0.28s cubic-bezier(.2,.7,.3,1)',
+        }}
+             onClick={(e) => { if (e.target === e.currentTarget) { setActiveSheet(null); setSelected(null);} }}>
+          <RouteDetailSheet />
+        </div>
+      )}
+    </div>
+  );
+
+  return (
+    <>
+      <style>{`
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+      `}</style>
+      <DesignCanvas>
+        <DCSection id="brand" title="Splash & Onboarding" subtitle="First-run · Filipino-first copy">
+          <DCArtboard id="splash" label="01 · Splash" width={375} height={812}>
+            <PhoneFrame statusDark dark><SplashScreen/></PhoneFrame>
+          </DCArtboard>
+          <DCArtboard id="onb1" label="02 · Onboarding · Beacon" width={375} height={812}>
+            <PhoneFrame><Onb1/></PhoneFrame>
+          </DCArtboard>
+          <DCArtboard id="onb2" label="03 · Onboarding · Crowd" width={375} height={812}>
+            <PhoneFrame><Onb2/></PhoneFrame>
+          </DCArtboard>
+          <DCArtboard id="onb3" label="04 · Onboarding · Guardian" width={375} height={812}>
+            <PhoneFrame><Onb3/></PhoneFrame>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="auth" title="Authentication" subtitle="Phone + OTP via Philippine numbers">
+          <DCArtboard id="otp1" label="05 · Phone Entry" width={375} height={812}>
+            <PhoneFrame><OtpEntry/></PhoneFrame>
+          </DCArtboard>
+          <DCArtboard id="otp2" label="06 · OTP Verify" width={375} height={812}>
+            <PhoneFrame><OtpVerify/></PhoneFrame>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="map" title="Home — Map (3 variations)" subtitle="Tap a yellow beacon to open the route sheet">
+          <DCArtboard id="map-default" label="07a · Cards sheet (default)" width={375} height={812}>
+            <PhoneFrame><MapWithSheet variant="cards"/></PhoneFrame>
+          </DCArtboard>
+          <DCArtboard id="map-list" label="07b · List sheet" width={375} height={812}>
+            <PhoneFrame><MapWithSheet variant="list"/></PhoneFrame>
+          </DCArtboard>
+          <DCArtboard id="map-minimal" label="07c · Minimal · single next" width={375} height={812}>
+            <PhoneFrame><MapWithSheet variant="minimal"/></PhoneFrame>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="sheets" title="Detail Sheets" subtitle="Triggered by tapping a beacon or stop">
+          <DCArtboard id="route-sheet" label="08 · Route Detail" width={375} height={812}>
+            <PhoneFrame>
+              <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                <JWMap width={375} height={812} dark={tweaks.darkMap}
+                       density="normal" crowdState="mixed" selectedId="b1" etas={{b1:true}}
+                       showRouteLine/>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '72%' }}>
+                  <RouteDetailSheet/>
+                </div>
+              </div>
+            </PhoneFrame>
+          </DCArtboard>
+          <DCArtboard id="stop-sheet" label="09 · Stop Detail" width={375} height={812}>
+            <PhoneFrame>
+              <div style={{ width: '100%', height: '100%', position: 'relative' }}>
+                <JWMap width={375} height={812} dark={tweaks.darkMap}
+                       density="sparse" crowdState="mixed" selectedId="b3" etas={{b3:true}}/>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '52%' }}>
+                  <StopDetailSheet/>
+                </div>
+              </div>
+            </PhoneFrame>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="crowd" title="Crowding Report (2 variations)" subtitle="One-tap report — must be fast at the kanto">
+          <DCArtboard id="crowd-v1" label="10a · Stacked pills (spec)" width={375} height={812}>
+            <PhoneFrame>
+              <div style={{ width: '100%', height: '100%', position: 'relative', background: 'rgba(0,0,0,0.5)' }}>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '52%' }}>
+                  <CrowdReportV1/>
+                </div>
+              </div>
+            </PhoneFrame>
+          </DCArtboard>
+          <DCArtboard id="crowd-v2" label="10b · Triptych w/ density viz" width={375} height={812}>
+            <PhoneFrame>
+              <div style={{ width: '100%', height: '100%', position: 'relative', background: 'rgba(0,0,0,0.5)' }}>
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '52%' }}>
+                  <CrowdReportV2/>
+                </div>
+              </div>
+            </PhoneFrame>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="profile" title="Guardian & Profile" subtitle="Gamification + settings">
+          <DCArtboard id="guardian" label="11 · Route Guardian" width={375} height={812}>
+            <PhoneFrame><GuardianScreen/></PhoneFrame>
+          </DCArtboard>
+          <DCArtboard id="profile-screen" label="12 · Profile" width={375} height={812}>
+            <PhoneFrame><ProfileScreen/></PhoneFrame>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="Map">
+          <TweakToggle label="Dark map" value={tweaks.darkMap} onChange={v => setTweak('darkMap', v)}/>
+          <TweakRadio label="Beacon density" value={tweaks.density}
+                      options={[{value:'sparse',label:'Sparse'},{value:'normal',label:'Normal'},{value:'dense',label:'Dense'}]}
+                      onChange={v => setTweak('density', v)}/>
+          <TweakRadio label="Crowding" value={tweaks.crowdState}
+                      options={[{value:'mixed',label:'Mixed'},{value:'allred',label:'All packed'},{value:'allgreen',label:'All open'}]}
+                      onChange={v => setTweak('crowdState', v)}/>
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

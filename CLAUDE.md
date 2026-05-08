@@ -101,6 +101,10 @@ cd apps/commuter && flutter run -d chrome    # or -d windows / -d <device-id>
 
 `intl` in `pubspec.yaml` must match the version that `flutter_localizations` pins (currently `^0.20.2` for Flutter 3.41.x). Lowering it breaks `pub get` with a "version solving failed" error.
 
+## Android Build Requirements
+
+Both apps target `minSdk = 23` (Android 6.0) and `targetSdk = 34`. The commuter app's `AndroidManifest.xml` needs `FOREGROUND_SERVICE_LOCATION` and `POST_NOTIFICATIONS` (Android 13+); the driver app needs the foreground-service permissions but not POST_NOTIFICATIONS (no FCM yet). Both need `ACCESS_BACKGROUND_LOCATION` so GPS keeps streaming when the app is backgrounded during a ride. iOS scaffolding has not been generated — it requires macOS + Xcode.
+
 ## Dev-Mode Init Guards (Do Not Remove)
 
 `lib/main.dart` wraps `Supabase.initialize` and `Firebase.initializeApp` in try/catch, and `lib/core/router.dart` wraps `Supabase.instance.client.auth.currentSession` the same way. These guards are intentional — they let the app run against placeholder credentials in `core/constants.dart` so contributors without Supabase/Firebase projects can still launch the UI. Remove the guards only when real credentials become a hard requirement.

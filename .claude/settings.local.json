@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "PowerShell(cmd /c \"dir C:\\\\Users\\\\brian\\\\OneDrive\\\\Downloads\\\\flutter\" 2>&1)",
-      "Bash(node \"C:/Users/brian/.claude/plugins/cache/openai-codex/codex/1.0.4/scripts/codex-companion.mjs\" --help)"
+      "Bash(node \"C:/Users/brian/.claude/plugins/cache/openai-codex/codex/1.0.4/scripts/codex-companion.mjs\" --help)",
+      "PowerShell(Get-Process -Name \"dart\",\"flutter_tester\" -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force)"
     ]
   }
 }
